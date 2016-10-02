@@ -12,6 +12,7 @@ h1 = 0xEFCDAB89
 h2 = 0x98BADCFE
 h3 = 0x10325476
 h4 = 0xC3D2E1F0
+
 SHAfile = open("pushmo.cia" , "rb")
 message= SHAfile.read()
     #arg = io.BytesIO(SHAfile)
@@ -23,7 +24,7 @@ message += b'\x00' * ((56 - (msg_len + 1) % 64) % 64)
 message += struct.pack(b'>Q', msg_len_b) #usigned long long (8bytes 64 bit) Big Endian
 #message should be message len in bits + 1 + zeroes + 64 bit representation of length  = 512
 #range([start], stop[, step])
-for i in range(0, msg_len, 64):
+for i in range(0, len(message), 64):
     w = [0]*80
     for g in range(16):
         w[g] = struct.unpack(b'>I', message[i + g*4:i + g*4 + 4])[0]
@@ -52,8 +53,12 @@ for i in range(0, msg_len, 64):
             f = b ^ c ^ d
             k = 0xCA62C1D6
 
-        a, b, c, d, e = ((leftrot(a, 5) + f + e + k + w[i]) & 0xffffffff,
-                            a, leftrot(b, 30), c, d)
+        temp = (leftrot(a, 5) + f + e + k + w[i]) & 0xffffffff
+        e = d
+        d = c
+        c = leftrot(b, 30)
+        b = a
+        a = temp
 
     # sAdd this chunk's hash to result so far:
     h0 = (h0 + a) & 0xffffffff
